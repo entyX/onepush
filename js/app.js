@@ -29,7 +29,7 @@
   const blank = () => ({
     v: 1,
     created: Date.now(),
-    settings: { theme: '', testDate: '', name: '', mode: 'tutor' },
+    settings: { theme: '', testDate: '', name: '', mode: 'tutor', ai: { engine: 'webllm', model: 'Qwen2.5-7B-Instruct-q4f16_1-MLC', ollamaUrl: 'http://localhost:11434', ollamaModel: 'llama3.1:8b', downloaded: false } },
     lessons: {},
     attempts: [],
     bookmarks: {},
@@ -44,7 +44,7 @@
   function load() {
     try {
       const raw = JSON.parse(localStorage.getItem(KEY));
-      if (raw && raw.v === 1) return Object.assign(blank(), raw, { settings: Object.assign(blank().settings, raw.settings || {}) });
+      if (raw && raw.v === 1) { const st = Object.assign(blank().settings, raw.settings || {}); st.ai = Object.assign(blank().settings.ai, (raw.settings || {}).ai || {}); if (st.ai.model === 'Qwen2.5-3B-Instruct-q4f16_1-MLC' && !st.ai.downloaded) st.ai.model = 'Qwen2.5-7B-Instruct-q4f16_1-MLC'; return Object.assign(blank(), raw, { settings: st }); }
     } catch (e) { /* storage unavailable or corrupt */ }
     return blank();
   }
@@ -295,7 +295,7 @@
           <div style="margin-top:18px">
             <div class="row" style="justify-content:space-between;font-size:13px;margin-bottom:6px"><span class="muted">Readiness estimate</span><b>${readiness()}%</b></div>
             <div class="bar"><i style="width:${readiness()}%"></i></div>
-            <p class="faint" style="font-size:12px;margin-top:8px">Blends lesson completion, weighted MCQ accuracy, SAQ self-scores and practice-test results.</p>
+            <p class="faint" style="font-size:12px;margin-top:8px">Blends lesson completion, weighted MCQ accuracy, SAQ scores and practice-test results.</p>
           </div>
         </div>
       </section>
@@ -717,10 +717,63 @@
     const r = S.saq[id] || (S.saq[id] = { ans: {}, score: null, revealed: false });
     const enter = Date.now(); cleanup.push(() => addSeconds((Date.now() - enter) / 1000));
     paint(saqBody(s, r, 'saq') + `
-      <div class="row" style="margin-top:22px">${r.revealed ? `<button class="btn" data-act="reset">Clear my answer</button>` : `<button class="btn primary" data-act="reveal">Reveal scoring guide</button>`}<span class="spacer"></span>${nextSaqLink(id)}</div>`, { narrow: true });
+      <div class="ai-status" id="aiStatus" hidden></div>
+      <div class="row wrap" style="margin-top:22px"><button class="btn primary" data-act="aigrade">${ICON.spark} ${r.ai ? 'Re-grade with AI' : 'Grade with AI'}</button>${r.revealed ? `<button class="btn" data-act="reset">Clear my answer</button>` : `<button class="btn" data-act="reveal">Reveal scoring guide</button>`}<span class="spacer"></span>${nextSaqLink(id)}</div>
+      <p class="faint" style="font-size:12px;margin-top:10px">The AI grader runs on your device and scores each part against its scoring guide using AP rubric rules. It’s a study aid: compare its reasoning with the guide, and change any score you disagree with.</p>`, { narrow: true });
     bindSaq(s, r, () => viewSaq(id));
     H.reveal = () => { r.revealed = true; r.ts = Date.now(); r.score = r.score || {}; save(); bump(); viewSaq(id); };
     H.reset = () => { S.saq[id] = { ans: {}, score: null, revealed: false }; save(); viewSaq(id); };
+    H.aigrade = () => runAiGrade([{ s, r }], () => { r.revealed = true; r.ts = Date.now(); save(); if (location.hash === '#/saq/' + id) { const y = scrollY; viewSaq(id); scrollTo(0, y); } });
+  }
+  function aiBox(ai) {
+    const m = ai.model === 'rule' ? '' : String(ai.model || '').replace(/-q4f16_1-MLC$/, '').replace(/^ollama:/, 'Ollama · ');
+    return `<div class="ai-box ${ai.score ? 'good' : 'bad'}"><div class="ai-h"><span class="ai-badge">AI grader</span><b>${ai.score}/1 point</b><span class="spacer"></span><span class="faint" style="font-size:11.5px">${esc(m)}</span></div>
+      ${ai.verdict ? `<p>${esc(ai.verdict)}</p>` : ''}${ai.strengths ? `<p><b>Did well:</b> ${esc(ai.strengths)}</p>` : ''}${ai.fix ? `<p><b>To ${ai.score ? 'strengthen' : 'earn the point'}:</b> ${esc(ai.fix)}</p>` : ''}</div>`;
+  }
+  function aiStatus(text, p) {
+    const el = $('#aiStatus'); if (!el) return;
+    el.hidden = false;
+    el.innerHTML = `<div class="row" style="gap:10px"><span class="spin"></span><span style="flex:1;min-width:0">${esc(text)}</span>${p != null ? `<b class="mono" style="font-size:12px">${Math.round(p * 100)}%</b>` : ''}</div>${p != null ? `<div class="bar" style="margin-top:8px"><i style="width:${Math.round(p * 100)}%"></i></div>` : ''}`;
+  }
+  function aiReady() {
+    const a = S.settings.ai;
+    if (!window.Grader) { toast('The AI grader didn’t load.'); return false; }
+    if (Grader.isBusy()) { toast('Already grading. Hang on.'); return false; }
+    if (a.engine === 'webllm' && !Grader.hasWebGPU()) { toast('This browser lacks WebGPU. Use desktop Chrome or Edge, or switch to Ollama in Data & Settings.'); return false; }
+    if (a.engine === 'webllm' && !a.downloaded && !Grader.isLoaded(a.model)) {
+      const m = Grader.MODELS.find(x => x.id === a.model) || Grader.MODELS[0];
+      return confirm(`The AI grader runs on your own computer. The first time, it downloads the model (${m.name}, ${m.size}) and caches it in your browser. After that it loads from the cache in seconds.\n\nNothing you write is sent anywhere. Download now?`);
+    }
+    return true;
+  }
+  function saqItems(s, ans, label) {
+    return s.parts.map((p, k) => ({ key: 'abc'[k], label: (label || '') + 'abc'[k].toUpperCase(), question: p.q, rubric: p.r, sample: p.s, stim: s.stim, answer: (ans && ans['abc'[k]]) || '' }));
+  }
+  async function runAiGrade(groups, done) {
+    // groups: [{ s, r }] — r is the stored SAQ record (gets .ai, .score, .scoreSrc)
+    const items = [], owners = [];
+    groups.forEach((g, gi) => saqItems(g.s, g.r.ans, groups.length > 1 ? (gi + 1) : '').forEach(it => { items.push(it); owners.push(g.r); }));
+    if (!items.some(it => it.answer.trim())) return toast('Write an answer first, then grade it.');
+    if (!aiReady()) return;
+    aiStatus('Starting the AI grader…', null);
+    let errors = 0;
+    try {
+      await Grader.gradeMany(S.settings.ai, items, aiStatus, (i, res, err) => {
+        const r = owners[i], key = items[i].key;
+        if (!res) { errors++; return; }
+        r.ai = r.ai || {}; r.ai[key] = Object.assign({ ts: Date.now() }, res);
+        r.score = r.score || {}; r.score[key] = res.score;
+        r.scoreSrc = r.scoreSrc || {}; r.scoreSrc[key] = 'ai';
+        save();
+      });
+      if (S.settings.ai.engine === 'webllm') { S.settings.ai.downloaded = true; save(); }
+      bump();
+      toast(errors ? `Graded, but ${errors} part${errors === 1 ? '' : 's'} failed. Try again.` : 'AI grading done.');
+    } catch (e) {
+      const el = $('#aiStatus'); if (el) el.innerHTML = `<b style="color:var(--bad)">AI grader error:</b> ${esc(e.message)}`;
+      return;
+    }
+    done();
   }
   function nextSaqLink(id) { const i = SAQ.findIndex(x => x.id === id); const n = SAQ[i + 1]; return n ? `<a class="btn ghost" href="#/saq/${n.id}">Next SAQ ${ICON.arrowR}</a>` : ''; }
   function saqBody(s, r, ctx) {
@@ -735,16 +788,19 @@
         ${s.parts.map((p, k) => {
       const key = 'abc'[k]; const val = (r.ans && r.ans[key]) || '';
       const sc = r.score && r.score[key];
+      const ai = r.ai && r.ai[key];
+      const src = r.scoreSrc && r.scoreSrc[key];
       return `<div class="saq-part"><div class="pl"><b>${key.toUpperCase()}</b><div class="pq">${p.q}</div></div>
           <textarea class="input" data-in="ans" data-k="${key}" placeholder="Write 2–4 sentences. Answer, give evidence, then explain." ${r.locked ? 'readonly' : ''}>${esc(val)}</textarea><div class="wc">${val.trim() ? val.trim().split(/\s+/).length : 0} words</div>
-          ${r.revealed ? `<div class="rubric"><div class="rh">Scoring guide: earns the point if it does any of these<div class="self-score"><span class="muted" style="font-weight:500;margin-right:4px">My score:</span><button class="y ${sc === 1 ? 'on' : ''}" data-act="score" data-k="${key}" data-v="1">1 pt</button><button class="n ${sc === 0 ? 'on' : ''}" data-act="score" data-k="${key}" data-v="0">0 pts</button></div></div><div class="rb"><ul>${p.r.map(x => `<li>${x}</li>`).join('')}</ul>${p.s ? `<div class="sample"><b style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--good)">Sample 1-point answer</b><br>${p.s}</div>` : ''}</div></div>` : ''}
+          ${r.revealed ? `<div class="rubric"><div class="rh">Scoring guide: earns the point if it does any of these<div class="self-score"><span class="muted" style="font-weight:500;margin-right:4px">${src === 'ai' ? '<span class="ai-badge">AI</span> ' : ''}Score:</span><button class="y ${sc === 1 ? 'on' : ''}" data-act="score" data-k="${key}" data-v="1">1 pt</button><button class="n ${sc === 0 ? 'on' : ''}" data-act="score" data-k="${key}" data-v="0">0 pts</button></div></div><div class="rb"><ul>${p.r.map(x => `<li>${x}</li>`).join('')}</ul>${p.s ? `<div class="sample"><b style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--good)">Sample 1-point answer</b><br>${p.s}</div>` : ''}</div></div>` : ''}
+          ${ai ? aiBox(ai) : ''}
         </div>`;
     }).join('')}
       </div>`;
   }
   function bindSaq(s, r, rerender) {
     H.ans = el => { r.ans = r.ans || {}; r.ans[el.dataset.k] = el.value; const wc = el.nextElementSibling; if (wc) wc.textContent = (el.value.trim() ? el.value.trim().split(/\s+/).length : 0) + ' words'; save(); };
-    H.score = el => { r.score = r.score || {}; r.score[el.dataset.k] = +el.dataset.v; r.ts = Date.now(); save(); const y = scrollY; rerender(); scrollTo(0, y); };
+    H.score = el => { r.score = r.score || {}; r.score[el.dataset.k] = +el.dataset.v; r.scoreSrc = r.scoreSrc || {}; r.scoreSrc[el.dataset.k] = 'self'; r.ts = Date.now(); save(); const y = scrollY; rerender(); scrollTo(0, y); };
   }
 
   /* ════════════════════════ VOCAB & DATES ════════════════════════ */
@@ -996,8 +1052,10 @@
     if (tab === 'mcq') {
       rv.innerHTML = `<div class="stack">${t.mcq.map((q, j) => { const p = r.mcq[j]; return `<details class="card pad"><summary style="cursor:pointer;display:flex;gap:10px;align-items:center;list-style:none"><span class="status-dot ${p === q.a ? 'c' : 'w'}"></span><b style="font-weight:550;flex:1;font-size:14.5px">${j + 1}. ${q.q.replace(/<[^>]+>/g, '')}</b>${diffChip(q.d)}${lessonChip(q.l)}</summary><div style="margin-top:14px">${stimHTML(q)}<div class="opts">${q.o.map((o, k) => `<div class="opt locked ${k === q.a ? 'right' : k === p ? 'wrong' : ''}"><span class="L">${L(k)}</span><span class="ot">${o}${q.w && q.w[k] ? `<span class="why">${q.w[k]}</span>` : ''}</span></div>`).join('')}</div>${p == null ? '<p class="muted" style="margin-top:10px">You left this blank.</p>' : ''}<div class="explain"><h4>Explanation</h4>${q.x || ''}</div></div></details>`; }).join('')}</div>`;
     } else {
-      rv.innerHTML = t.saq.map((s, j) => { const rs = r.saq[j] = r.saq[j] || { ans: {} }; return `<div data-sj="${j}">${saqBody(s, Object.assign({}, rs, { revealed: true, locked: true }), 'review')}</div>`; }).join('');
-      H.score = el => { const j = +el.closest('[data-sj]').dataset.sj; const rs = r.saq[j]; rs.score = rs.score || {}; rs.score[el.dataset.k] = +el.dataset.v; save(); const y = scrollY; viewTestReview(id); scrollTo(0, y); };
+      rv.innerHTML = `<div class="card pad row wrap" style="gap:12px"><div style="flex:1;min-width:220px"><b>Score your SAQs</b><p class="muted" style="font-size:13.5px;margin-top:2px">Let the on-device AI grader score all ${t.saq.length * 3} parts against the scoring guides, or score each part yourself.</p></div><button class="btn primary" data-act="aiall">${ICON.spark} Grade all with AI</button></div><div class="ai-status" id="aiStatus" hidden></div>` +
+        t.saq.map((s, j) => { const rs = r.saq[j] = r.saq[j] || { ans: {} }; return `<div data-sj="${j}">${saqBody(s, Object.assign({}, rs, { revealed: true, locked: true }), 'review')}</div>`; }).join('');
+      H.score = el => { const j = +el.closest('[data-sj]').dataset.sj; const rs = r.saq[j]; rs.score = rs.score || {}; rs.score[el.dataset.k] = +el.dataset.v; rs.scoreSrc = rs.scoreSrc || {}; rs.scoreSrc[el.dataset.k] = 'self'; save(); const y = scrollY; viewTestReview(id); scrollTo(0, y); };
+      H.aiall = () => runAiGrade(t.saq.map((s, j) => ({ s, r: r.saq[j] = r.saq[j] || { ans: {} } })), () => { save(); if (location.hash === '#/tests/' + id + '/review') { const y = scrollY; viewTestReview(id); scrollTo(0, y); } });
     }
     H.rtab = el => { r.tab = el.dataset.t; save(); const y = scrollY; viewTestReview(id); scrollTo(0, y); };
   }
@@ -1084,7 +1142,7 @@
       <div class="grid g3" style="margin-top:16px">
         <div class="card pad"><div class="card-head"><h3>By difficulty</h3></div>${byD.map(x => `<div class="hbar"><span class="diff-${DIFF_CLS[x.d]}" style="font-weight:550">${DIFF[x.d]}</span><div class="bar"><i style="width:${Math.round(x.acc * 100)}%;background:var(--d-${DIFF_CLS[x.d]})"></i></div><span class="pct">${x.n ? Math.round(x.acc * 100) + '%' : '—'}</span></div>`).join('')}</div>
         <div class="card pad"><div class="card-head"><h3>By AP skill</h3></div>${bySk.map(x => `<div class="hbar" style="grid-template-columns:130px 1fr 42px"><span>${SKILL[x.s]}</span><div class="bar"><i style="width:${Math.round(x.acc * 100)}%"></i></div><span class="pct">${x.n ? Math.round(x.acc * 100) + '%' : '—'}</span></div>`).join('')}</div>
-        <div class="card pad"><div class="card-head"><h3>SAQ self-scores</h3></div>${['a', 'b', 'c'].map(k => `<div class="hbar" style="grid-template-columns:70px 1fr 42px"><span>Part ${k.toUpperCase()}</span><div class="bar good"><i style="width:${pct(saqParts[k][0], saqParts[k][1])}%"></i></div><span class="pct">${saqParts[k][1] ? pct(saqParts[k][0], saqParts[k][1]) + '%' : '—'}</span></div>`).join('')}<p class="faint" style="font-size:12px;margin-top:10px;line-height:1.5">Part C is usually the hardest because it often asks for evidence that challenges a claim, or a less obvious connection.</p></div>
+        <div class="card pad"><div class="card-head"><h3>SAQ scores</h3></div>${['a', 'b', 'c'].map(k => `<div class="hbar" style="grid-template-columns:70px 1fr 42px"><span>Part ${k.toUpperCase()}</span><div class="bar good"><i style="width:${pct(saqParts[k][0], saqParts[k][1])}%"></i></div><span class="pct">${saqParts[k][1] ? pct(saqParts[k][0], saqParts[k][1]) + '%' : '—'}</span></div>`).join('')}<p class="faint" style="font-size:12px;margin-top:10px;line-height:1.5">Part C is usually the hardest because it often asks for evidence that challenges a claim, or a less obvious connection.</p></div>
       </div>
       <div class="grid g2" style="margin-top:16px">
         <div class="card pad"><div class="card-head"><h3>Activity</h3><span class="faint" style="font-size:12px">last 18 weeks</span></div><div style="overflow-x:auto"><div class="calendar">${cal.join('')}</div></div></div>
@@ -1120,6 +1178,7 @@
           <label class="label" style="margin-top:14px">Unit test date</label><input type="date" class="input" data-ch="tdate" value="${esc(S.settings.testDate)}">
           <label class="label" style="margin-top:14px">Theme</label><div class="seg">${[['', 'System'], ['light', 'Light'], ['dark', 'Dark']].map(([k, n]) => `<button class="${S.settings.theme === k ? 'on' : ''}" data-act="theme" data-t="${k}">${n}</button>`).join('')}</div></div>
       </div>
+      ${aiSettingsCard()}
       <div class="card pad" style="margin-top:16px"><h3 style="font-size:15px;margin-bottom:4px">Reset</h3><p class="muted" style="font-size:13.5px;margin-bottom:14px">Clear one part of your data, or everything.</p>
         <div class="row wrap"><button class="btn danger" data-act="rst" data-k="attempts">Clear MCQ history</button><button class="btn danger" data-act="rst" data-k="cards">Reset flashcards</button><button class="btn danger" data-act="rst" data-k="tests">Clear test attempts</button><button class="btn danger" data-act="rst" data-k="all">Reset everything</button></div></div>
       <div class="card pad" style="margin-top:16px"><h3 style="font-size:15px;margin-bottom:6px">About OnePush</h3><p class="muted" style="font-size:13.5px;line-height:1.6">Built for North Creek APUSH, Unit 1: American Democracy. Lessons follow the class study guide and the AP U.S. History Course and Exam Description topics it cites. Historical images are public-domain or openly licensed works from Wikimedia Commons; election maps are by Wikimedia contributors (CC BY-SA). Practice questions are original and written in AP style. They are not official College Board items.</p></div>`);
@@ -1136,13 +1195,14 @@
           const j = JSON.parse(rd.result); const d = j.data || j;
           if (d.v !== 1 || !Array.isArray(d.attempts)) throw new Error('bad');
           if (!confirm('Replace your current progress with this file?')) return;
-          S = Object.assign(blank(), d, { settings: Object.assign(blank().settings, d.settings || {}) }); save();
+          const st = Object.assign(blank().settings, d.settings || {}); st.ai = Object.assign(blank().settings.ai, (d.settings || {}).ai || {}); S = Object.assign(blank(), d, { settings: st }); save();
           if (S.settings.theme) document.documentElement.dataset.theme = S.settings.theme;
           toast('Progress imported.'); route();
         } catch (e) { toast('That file isn’t a valid OnePush export.'); }
       };
       rd.readAsText(f);
     };
+    bindAiSettings();
     H.name = el => { S.settings.name = el.value.trim(); save(); };
     H.tdate = el => { S.settings.testDate = el.value; save(); toast('Test date saved.'); };
     H.theme = el => { S.settings.theme = el.dataset.t; save(); if (el.dataset.t) document.documentElement.dataset.theme = el.dataset.t; else delete document.documentElement.dataset.theme; viewSettings(); };
@@ -1151,6 +1211,48 @@
       if (!confirm(k === 'all' ? 'Erase ALL progress? This can’t be undone (unless you exported).' : 'Clear this data?')) return;
       if (k === 'all') S = blank(); else if (k === 'attempts') { S.attempts = []; } else S[k] = {};
       save(); toast('Done.'); route();
+    };
+  }
+
+  function aiSettingsCard() {
+    const a = S.settings.ai, G = window.Grader;
+    if (!G) return '';
+    const m = G.MODELS.find(x => x.id === a.model) || G.MODELS[0];
+    const loaded = G.isLoaded(a.model);
+    return `<div class="card pad" style="margin-top:16px"><div class="row wrap" style="justify-content:space-between;margin-bottom:4px"><h3 style="font-size:15px">AI SAQ grader</h3><span class="chip ${a.engine === 'webllm' ? (loaded ? 'good' : a.downloaded ? 'accent' : '') : ''}">${a.engine === 'webllm' ? (loaded ? 'Loaded and ready' : a.downloaded ? 'Downloaded' : 'Not downloaded yet') : 'Using Ollama'}</span></div>
+      <p class="muted" style="font-size:13.5px;margin-bottom:14px;max-width:720px">Scores each SAQ part (0 or 1) against its scoring guide using AP rubric rules, and explains what to fix. It runs entirely on your computer, so your writing is never sent to a server.</p>
+      <label class="label">Where the model runs</label>
+      <div class="seg" style="margin-bottom:14px"><button class="${a.engine === 'webllm' ? 'on' : ''}" data-act="aiEngine" data-e="webllm">In this browser</button><button class="${a.engine === 'ollama' ? 'on' : ''}" data-act="aiEngine" data-e="ollama">Ollama on this computer</button></div>
+      ${a.engine === 'webllm' ? `
+        ${G.hasWebGPU() ? '' : `<div class="callout mistake" style="margin-bottom:12px"><span class="ci">${ICON.alert}</span><div><h4>WebGPU isn’t available here</h4><div class="cb">The in-browser model needs WebGPU. Use a recent desktop Chrome or Edge, or switch to Ollama.</div></div></div>`}
+        <label class="label">Model</label>
+        <select class="select" data-ch="aiModel" style="max-width:420px">${G.MODELS.map(x => `<option value="${x.id}" ${x.id === a.model ? 'selected' : ''}>${x.name} (${x.size})</option>`).join('')}</select>
+        <p class="faint" style="font-size:12px;margin-top:6px">${esc(m.note)}. The first download is cached by your browser, so later visits load it in seconds.</p>
+        <div class="row wrap" style="margin-top:12px"><button class="btn" data-act="aiLoad" ${G.hasWebGPU() ? '' : 'disabled'}>${loaded ? 'Model ready ✓' : a.downloaded ? 'Load model now' : 'Download &amp; load model'}</button></div>`
+        : `
+        <div class="grid g2" style="gap:12px"><div><label class="label">Ollama address</label><input class="input" data-in="aiUrl" value="${esc(a.ollamaUrl)}"></div><div><label class="label">Model name</label><input class="input" data-in="aiOModel" value="${esc(a.ollamaModel)}" placeholder="llama3.1:8b"></div></div>
+        <div class="row wrap" style="margin-top:12px"><button class="btn" data-act="aiTest">Test connection</button></div>
+        <p class="faint" style="font-size:12.5px;margin-top:10px;line-height:1.6">Install Ollama from ollama.com, then run <code>ollama pull ${esc(a.ollamaModel || 'llama3.1:8b')}</code>. ${/^(http:\/\/(localhost|127\.0\.0\.1)|file:)/.test(location.origin) || location.protocol === 'file:' ? 'Opening OnePush from this computer works with Ollama’s default settings.' : `Because OnePush is open from <code>${esc(location.origin)}</code>, start Ollama with <code>OLLAMA_ORIGINS=${esc(location.origin)} ollama serve</code> so the browser is allowed to reach it.`}</p>`}
+      <div class="ai-status" id="aiStatus" hidden></div>
+      <p class="faint" style="font-size:12px;margin-top:12px">AI scores are a study aid, not an official score. Real AP readers may score differently, so check the reasoning against the scoring guide and change any score you disagree with.</p></div>`;
+  }
+  function bindAiSettings() {
+    const a = S.settings.ai;
+    H.aiEngine = el => { a.engine = el.dataset.e; save(); viewSettings(); };
+    H.aiModel = el => { a.model = el.value; a.downloaded = false; save(); viewSettings(); };
+    H.aiUrl = el => { a.ollamaUrl = el.value.trim(); save(); };
+    H.aiOModel = el => { a.ollamaModel = el.value.trim(); save(); };
+    H.aiLoad = async () => {
+      if (Grader.isLoaded(a.model)) return toast('The model is already loaded.');
+      try { await Grader.preload(a, aiStatus); a.downloaded = true; save(); toast('AI grader ready.'); if (location.hash === '#/settings') viewSettings(); }
+      catch (e) { const el = $('#aiStatus'); if (el) { el.hidden = false; el.innerHTML = `<b style="color:var(--bad)">Couldn’t load the model:</b> ${esc(e.message)}`; } }
+    };
+    H.aiTest = async () => {
+      aiStatus('Contacting Ollama…', null);
+      try {
+        const r = await Grader.testOllama(a); const el = $('#aiStatus');
+        el.innerHTML = r.ok ? `<b style="color:var(--good)">Connected.</b> Found model <code>${esc(a.ollamaModel)}</code>.` : `<b style="color:var(--warn)">Connected, but <code>${esc(a.ollamaModel)}</code> isn’t installed.</b> Run <code>ollama pull ${esc(a.ollamaModel)}</code>. Installed: ${esc(r.names.join(', ') || 'none')}`;
+      } catch (e) { $('#aiStatus').innerHTML = `<b style="color:var(--bad)">${esc(e.message)}</b>`; }
     };
   }
 
