@@ -36,8 +36,8 @@ Think step by step by filling in the JSON fields in order. Reply with JSON only,
 
   // Pull a date range like "between 1763 and 1775" or "from 1820 to 1860" out of the question.
   function period(q) {
-    const m = strip(q).match(/\b(1[5-9]\d\d|20[0-2]\d)\s*(?:and|to|–|-|through)\s*(1[5-9]\d\d|20[0-2]\d)\b/);
-    return m ? [+m[1], +m[2]] : null;
+    const ms = [...strip(q).matchAll(/\b(1[5-9]\d\d|20[0-2]\d)\s*(?:and|to|–|-|through)\s*(1[5-9]\d\d|20[0-2]\d)\b/g)];
+    return ms.length === 1 ? [+ms[0][1], +ms[0][2]] : null; // two ranges (e.g. comparing eras): let the model judge
   }
   function buildMessages(item) {
     const stim = [].concat(item.stim || []).map(s => {
