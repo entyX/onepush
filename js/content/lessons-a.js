@@ -59,7 +59,7 @@ window.LESSONS.push(
         ['DBQ', 'An essay using 7 documents. You’ll learn it later in the year.', '25%'],
         ['LEQ', 'An essay with no documents. You’ll learn it later in the year.', '15%']
       ], cap: 'Your unit test uses the multiple-choice and SAQ formats, and so do the practice tests on this site.' },
-      { t: 'check', q: 'You read a 1765 pamphlet protesting a British tax. A question asks, “The ideas in the excerpt most directly reflect which of the following?” Which skill is this?', o: ['Comparison', 'Contextualization', 'Continuity and change', 'Periodization'], a: 1, x: 'You need to place the source in its bigger situation, Britain’s new taxes after the French and Indian War. That is contextualization.' },
+      { t: 'check', q: 'You read a 1765 pamphlet protesting a British tax. A question asks, “The ideas in the excerpt most directly reflect which of the following?” Which skill is this?', o: ['Comparison', 'Contextualization', 'Continuity and change', 'Sourcing'], a: 1, x: 'You need to place the source in its bigger situation, Britain’s new taxes after the French and Indian War. That is contextualization.' },
       { t: 'callout', k: 'exam', title: 'How to use this site', h: ['<b>1.</b> Do the lessons in order. Try every interactive check, because getting things wrong in practice is how you learn.', '<b>2.</b> After each lesson, drill its questions in the Question Bank.', '<b>3.</b> Review flashcards every day, even for 5 minutes.', '<b>4.</b> When you’ve finished most lessons, take a timed practice test.'] }
     ] }
   ]
@@ -109,7 +109,7 @@ window.LESSONS.push(
       { t: 'sort', prompt: 'Sort each description into its region.', buckets: ['New England', 'Middle Colonies', 'South / Chesapeake'], items: [
         ['Puritan town meetings', 0], ['Wheat and flour exports', 1], ['Tobacco plantations', 2], ['William Penn’s “holy experiment”', 1], ['Shipbuilding and fishing', 0], ['Indentured servitude, then slavery', 2], ['Rice and indigo', 2], ['Roger Williams banished', 0], ['Most ethnically diverse', 1]
       ] },
-      { t: 'check', q: 'Your class asked: <i>which two regions were most similar?</i> Which pair has the strongest case?', o: ['New England and the South, because both were Protestant', 'New England and the Middle Colonies, because both had family farms, ports and diversified trade economies', 'The Middle Colonies and the South, because both grew crops for export', 'All three were equally different'], a: 1, x: 'New England and the Middle Colonies both relied on family farming, port cities and mixed economies, and slavery was far less central to either. The South stands apart because of cash crops, plantations and a slave labor system.' }
+      { t: 'check', q: 'Your class asked: <i>which two regions were most similar?</i> Which pair has the strongest case?', o: ['New England and the South, since both were settled by English Protestants', 'New England and the Middle Colonies, since both had family farms and ports', 'The Middle Colonies and the South, since both exported large cash crops', 'The South and New England, since both had strong elected assemblies'], a: 1, x: 'New England and the Middle Colonies both relied on family farming, port cities and mixed economies, and slavery was far less central to either. The South stands apart because of cash crops, plantations and a slave labor system.' }
     ] },
     { title: 'Mercantilism and salutary neglect', blocks: [
       'Why did Britain want colonies at all? The answer is <b>{{mercantilism}}</b>, the main economic idea of the 1600s and 1700s. Mercantilists believed the world had a fixed amount of wealth, measured in gold and silver. A country got richer by <b>exporting more than it imported</b>. Colonies were useful because they supplied raw materials and bought the mother country’s manufactured goods.',
@@ -123,7 +123,7 @@ window.LESSONS.push(
         ['1763: Britain cracks down', 'New taxes feel like an attack on their rights (Lesson 2)']
       ] },
       { t: 'callout', k: 'connect', h: 'Under salutary neglect, colonial legislatures got used to holding the <b>“power of the purse,”</b> meaning they alone decided taxes and paid the royal governors’ salaries. When Parliament suddenly started taxing them directly after 1763, colonists saw it as a break with how things had always worked. That is the spark for Lesson 2.' },
-      { t: 'check', q: 'Which statement best explains how salutary neglect affected colonial politics?', o: ['It made colonists dependent on royal governors for laws', 'It allowed colonial assemblies to gain real experience in self-government', 'It ended the Navigation Acts', 'It caused the French and Indian War'], a: 1, x: 'Because Britain didn’t closely enforce its laws, colonial assemblies ran most of their own affairs, including taxes. The Navigation Acts stayed on the books; they just weren’t enforced much.' }
+      { t: 'check', q: 'Which statement best explains how salutary neglect affected colonial politics?', o: ['It made colonists rely on royal governors to write laws', 'It let colonial assemblies gain real self-government', 'It led Parliament to repeal the Navigation Acts', 'It pushed colonists to seek seats in Parliament'], a: 1, x: 'Because Britain didn’t closely enforce its laws, colonial assemblies ran most of their own affairs, including taxes. The Navigation Acts stayed on the books; they just weren’t enforced much.' }
     ] }
   ]
 },
@@ -194,7 +194,7 @@ window.LESSONS.push(
         ['Crackdown', 'Britain punishes Boston (Coercive Acts)'],
         ['Unity and war', 'The colonies unite; fighting begins in 1775']
       ] },
-      { t: 'check', q: 'Which of the following best explains why Parliament began taxing the colonies after 1763?', o: ['To punish the colonies for the Boston Tea Party', 'To pay off war debt and the cost of defending North America', 'To encourage colonial manufacturing', 'To force the colonies to accept virtual representation'], a: 1, x: 'The French and Indian War left Britain with an enormous debt, plus the cost of stationing troops in America. The Boston Tea Party (1773) came much later.' }
+      { t: 'check', q: 'Which of the following best explains why Parliament began taxing the colonies after 1763?', o: ['To punish Boston for destroying East India tea', 'To pay off war debt and the cost of defense', 'To fund new manufacturing in the colonies', 'To end smuggling with the French West Indies'], a: 1, x: 'The French and Indian War left Britain with an enormous debt plus the cost of troops in America. The Tea Party came later (1773), and stopping smuggling was a secondary goal of the Sugar Act, not the main reason for taxing.' }
     ] }
   ]
 },
@@ -230,7 +230,7 @@ window.LESSONS.push(
       ] },
       { t: 'img', src: 'declaration.jpg', cap: 'John Trumbull’s painting of the committee presenting the Declaration to Congress (painted 1817–1819). Jefferson stands at the center holding the document.', credit: 'John Trumbull. Public domain.' },
       { t: 'callout', k: 'think', title: 'The contradiction', h: '“All men are created equal” was written by a man who enslaved more than 600 people over his lifetime. Jefferson’s draft included a passage blaming the king for the slave trade, but Congress cut it, partly to satisfy South Carolina and Georgia. The gap between the Declaration’s ideals and reality becomes a <b>huge theme</b> of this unit. Abolitionists, women’s rights activists and civil rights leaders all later quoted the Declaration to demand equality.' },
-      { t: 'check', q: 'The phrase “deriving their just powers from the consent of the governed” most directly reflects which idea?', o: ['Mercantilism', 'Divine right of kings', 'The social contract', 'Virtual representation'], a: 2, x: 'Government gets its legitimate power from the people’s agreement. That is the social contract (Locke). Divine right of kings is the opposite idea.' }
+      { t: 'check', q: 'The phrase “deriving their just powers from the consent of the governed” most directly reflects which idea?', o: ['Mercantilism', 'Divine right', 'The social contract', 'Virtual representation'], a: 2, x: 'Government gets its legitimate power from the people’s agreement. That is the social contract (Locke). Divine right of kings is the opposite idea.' }
     ] },
     { title: 'Writing the first state constitutions', blocks: [
       'Independence meant the colonies, now states, needed new governments. Between 1776 and 1780, almost every state wrote a <b>written constitution</b>. That was itself an Enlightenment idea: the rules of government should be written down where everyone can read them, not based on tradition like Britain’s unwritten constitution.',
@@ -313,7 +313,7 @@ window.LESSONS.push(
       ] },
       'George Washington wrote that he was shocked, and that the country needed a government with real power. Earlier, in 1786, five states had met at the <b>Annapolis Convention</b> to talk about trade problems. Too few states came, so they called for a bigger meeting in Philadelphia in May 1787. Shays’ Rebellion made sure that meeting happened, and that the delegates came ready for big changes.',
       { t: 'callout', k: 'connect', title: 'Coming back in Lesson 7', h: 'Compare Shays’ Rebellion to the <b>Whiskey Rebellion</b> of 1794. Both were farmer uprisings against taxes. But in 1794, the new federal government under the Constitution sent about 13,000 troops and crushed it. That contrast shows how much stronger the national government had become.' },
-      { t: 'check', q: 'Shays’ Rebellion most directly demonstrated which weakness of the Articles of Confederation?', o: ['The lack of a national court system to try the rebels', 'The national government’s inability to raise money and an army to keep order', 'The requirement that amendments be unanimous', 'The equal vote of each state in Congress'], a: 1, x: 'The government had no army and no taxing power to pay for one, so Massachusetts had to rely on privately funded militia. The other options are real weaknesses, but they aren’t what the rebellion exposed.' }
+      { t: 'check', q: 'Shays’ Rebellion most directly demonstrated which weakness of the Articles of Confederation?', o: ['The lack of national courts to try the rebels', 'The lack of money or an army to keep order', 'The rule that amendments had to be unanimous', 'The equal vote each state had in Congress'], a: 1, x: 'The government had no army and no taxing power to pay for one, so Massachusetts had to rely on privately funded militia. The other options are real weaknesses, but they aren’t what the rebellion exposed.' }
     ] }
   ]
 },
@@ -339,7 +339,7 @@ window.LESSONS.push(
       ] },
       'The convention almost broke up. Roger Sherman of Connecticut proposed the solution: the <b>{{Great Compromise}}</b> (or Connecticut Plan).',
       { t: 'callout', k: 'key', title: 'The Great Compromise', h: 'A <b>bicameral</b> Congress. The <b>House of Representatives</b> is based on population, which pleased the big states. The <b>Senate</b> gives every state 2 senators, which pleased the small states. All tax bills must start in the House.' },
-      { t: 'check', q: 'Which of the following best describes the Great Compromise?', o: ['It counted three-fifths of enslaved people for representation', 'It created a two-house legislature with one house based on population and one with equal representation', 'It created the Electoral College to choose the president', 'It allowed the slave trade to continue until 1808'], a: 1, x: 'The Great (Connecticut) Compromise combined the Virginia and New Jersey Plans into a bicameral Congress. The other options are real compromises too, but different ones.' }
+      { t: 'check', q: 'Which of the following best describes the Great Compromise?', o: ['It counted three-fifths of enslaved people for seats', 'It made one house based on population, one equal', 'It created electors to choose the president', 'It let the slave trade continue until 1808'], a: 1, x: 'The Great (Connecticut) Compromise combined the Virginia and New Jersey Plans into a bicameral Congress. The other options are real compromises too, but different ones.' }
     ] },
     { title: 'Compromise #2: Slavery', blocks: [
       'If seats in the House were based on population, who counted? Southern delegates wanted enslaved people counted, to get more seats, even though they had no rights. Northern delegates objected: if enslaved people were property, why count them for representation?',
@@ -387,7 +387,7 @@ window.LESSONS.push(
         ['Amending', 'Unanimous (13 of 13)', '2/3 of Congress + 3/4 of states'],
         ['Passing laws', '9 of 13 states', 'Simple majority of both houses + president (or veto override)']
       ] },
-      { t: 'check', q: 'Which change from the Articles of Confederation to the Constitution most directly addressed the problem exposed by Shays’ Rebellion?', o: ['Creating a two-house legislature', 'Giving the national government power to tax and to raise an army', 'Adding the Three-Fifths Compromise', 'Creating the Electoral College'], a: 1, x: 'Shays’ Rebellion showed the national government couldn’t pay its debts or put down an uprising. Taxing power and an army fixed exactly that.' },
+      { t: 'check', q: 'Which change from the Articles of Confederation to the Constitution most directly addressed the problem exposed by Shays’ Rebellion?', o: ['Creating a two-house national legislature', 'Giving Congress the power to tax and raise armies', 'Creating a system of national federal courts', 'Allowing amendments without unanimous consent'], a: 1, x: 'Shays’ Rebellion showed the national government couldn’t pay its debts or put down an uprising. The power to tax and raise an army fixed exactly that. Courts and easier amendments solved other problems.' },
       { t: 'callout', k: 'connect', h: 'The Constitution still had to be <b>approved</b>. Many Americans thought the new government looked a lot like the tyranny they had just fought. That debate is Lesson 6.' }
     ] }
   ]
@@ -444,7 +444,7 @@ window.LESSONS.push(
         ['10th', 'Powers not given to the federal government are <b>reserved to the states or the people</b>']
       ] },
       { t: 'callout', k: 'key', h: 'The Bill of Rights was the <b>Anti-Federalists’ lasting victory</b>. They lost the ratification fight but shaped the Constitution anyway. Notice how many amendments respond directly to British abuses from Lesson 2: quartering, searches, jury trials.' },
-      { t: 'check', q: 'The Bill of Rights was added to the Constitution mainly to', o: ['give the national government power to tax', 'win over Anti-Federalists who feared the new government would threaten individual liberties', 'end the Three-Fifths Compromise', 'protect the power of the president'], a: 1, x: 'Federalists promised a bill of rights to win votes in key states. It reassured Anti-Federalists who feared that a strong national government would trample individual rights.' }
+      { t: 'check', q: 'The Bill of Rights was added to the Constitution mainly to', o: ['give the national government power to tax', 'win over critics who feared for their liberties', 'end the Three-Fifths Compromise for good', 'limit the power of the new Supreme Court justices'], a: 1, x: 'Federalists promised a bill of rights to win votes in key states. It reassured Anti-Federalists who feared that a strong national government would trample individual rights.' }
     ] }
   ]
 }
