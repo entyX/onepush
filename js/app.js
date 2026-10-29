@@ -697,17 +697,18 @@
   /* ════════════════════════ SAQ ════════════════════════ */
   function viewSaqList() {
     const groups = {};
-    SAQ.forEach(s => { const k = s.kind || 'Other'; (groups[k] = groups[k] || []).push(s); });
+    groups['From class warm-ups'] = [];
+    SAQ.forEach(s => { const k = s.wu ? 'From class warm-ups' : s.kind || 'Other'; (groups[k] = groups[k] || []).push(s); });
     paint(`
       <div class="page-head"><div><div class="eyebrow">Practice</div><h1>SAQ Practice</h1><p>Short-answer questions in the AP format: three parts (A, B, C), each worth one point. Write your answer, then reveal the scoring guide and score yourself honestly.</p></div></div>
       <div class="card pad" style="margin-bottom:20px"><div class="grid g3">
         <div><div class="eyebrow" style="margin-bottom:6px">1 · Answer the question</div><p style="font-size:14px" class="muted">Start your first sentence by directly answering the prompt. Restate its key words.</p></div>
-        <div><div class="eyebrow" style="margin-bottom:6px">2 · Cite specific evidence</div><p style="font-size:14px" class="muted">Name a real law, event, person or court case. “People were upset” earns nothing; “the Stamp Act of 1765” does.</p></div>
+        <div><div class="eyebrow" style="margin-bottom:6px">2 · Give evidence</div><p style="font-size:14px" class="muted">Use a detail from the source, a specific fact, or a development of the period you can explain. “People were upset” earns nothing; “colonists resented being taxed without representation” does.</p></div>
         <div><div class="eyebrow" style="margin-bottom:6px">3 · Explain the link</div><p style="font-size:14px" class="muted">Use “because,” “which led to,” or “this shows.” Connect your evidence back to the prompt.</p></div>
       </div></div>
       ${Object.entries(groups).map(([k, arr]) => `<h3 style="margin:24px 0 10px">${esc(k)} <span class="faint" style="font-weight:400">· ${arr.length}</span></h3><div class="saq-list">${arr.map(s => {
       const r = S.saq[s.id]; const sc = r && r.score ? Object.values(r.score).filter(Boolean).length : null;
-      return `<a class="card saq-row" href="#/saq/${s.id}"><div style="min-width:0"><b style="font-size:15px;font-weight:550">${esc(s.title)}</b><div class="row wrap" style="margin-top:6px;gap:6px">${diffChip(s.d)}${(s.l || []).map(lessonChip).join('')}</div></div><div>${sc != null ? `<span class="chip ${sc === 3 ? 'good' : sc >= 2 ? 'accent' : 'bad'}">${sc}/3</span>` : r ? '<span class="chip">Draft</span>' : `<span class="btn sm">Start</span>`}</div></a>`;
+      return `<a class="card saq-row" href="#/saq/${s.id}"><div style="min-width:0"><b style="font-size:15px;font-weight:550">${esc(s.title)}</b><div class="row wrap" style="margin-top:6px;gap:6px">${diffChip(s.d)}${s.wu ? `<span class="chip">${esc(s.wu)}</span>` : ''}${(s.l || []).map(lessonChip).join('')}</div></div><div>${sc != null ? `<span class="chip ${sc === 3 ? 'good' : sc >= 2 ? 'accent' : 'bad'}">${sc}/3</span>` : r ? '<span class="chip">Draft</span>' : `<span class="btn sm">Start</span>`}</div></a>`;
     }).join('')}</div>`).join('')}`);
   }
   function viewSaq(id) {
@@ -780,7 +781,7 @@
     const stims = [].concat(s.stim || []);
     return `<div style="margin-top:16px"><a class="btn ghost sm" href="${ctx === 'saq' ? '#/saq' : 'javascript:void 0'}" ${ctx !== 'saq' ? 'hidden' : ''}>${ICON.arrowL} All SAQs</a></div>
       <div class="card qcard" style="margin-top:12px">
-        <div class="q-meta">${diffChip(s.d)}<span class="chip">${esc(s.kind || 'SAQ')}</span>${(s.l || []).map(lessonChip).join('')}</div>
+        <div class="q-meta">${diffChip(s.d)}<span class="chip">${esc(s.kind || 'SAQ')}</span>${s.wu ? `<span class="chip accent">${esc(s.wu)}</span>` : ''}${(s.l || []).map(lessonChip).join('')}</div>
         <h2 style="font-family:var(--serif);font-weight:500;font-size:24px;margin-bottom:14px">${esc(s.title)}</h2>
         ${s.intro ? `<p style="margin-bottom:14px;color:var(--ink-2)">${s.intro}</p>` : ''}
         ${stims.map(st => `<div class="stim">${st.label ? `<div class="eyebrow" style="margin-bottom:8px">${esc(st.label)}</div>` : ''}${st.img ? `<img src="${st.img}" alt="">` : ''}${st.table || ''}${st.text ? `<div class="st">${st.text}</div>` : ''}${st.src ? `<div class="ss">${st.src}</div>` : ''}</div>`).join('')}

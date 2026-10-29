@@ -351,7 +351,7 @@ window.LESSONS.push(
         ['<b>Describe</b>', 'Give relevant characteristics, more than just a name', '2 sentences'],
         ['<b>Explain</b>', 'Say <b>how or why</b>: connect your evidence to the prompt', '2–3 sentences, with “because” or “which led to”']
       ] },
-      { t: 'callout', k: 'key', title: 'The ACE method (your class uses CEE/CER, which works the same way)', h: '<b>A</b>nswer the question directly, using the prompt’s words. <b>C</b>ite specific evidence: a named law, event, person or date. <b>E</b>xplain how the evidence answers the question. If you do all three in every part, you’ll earn the point almost every time.' },
+      { t: 'callout', k: 'key', title: 'The ACE method (your class uses CEE/CER, which works the same way)', h: '<b>A</b>nswer the question directly, using the prompt’s words. <b>C</b>ite evidence: a detail from the source, a named law, event or person, or a larger development of the period that you clearly explain. Names and dates help, but a well-explained development or a detail pulled from the document can earn the point too. <b>E</b>xplain how the evidence answers the question. If you do all three in every part, you’ll earn the point almost every time.' },
       { t: 'h', h: 'Strong vs. weak' },
       { t: 'reveal', title: 'Prompt: Explain ONE cause of the Constitutional Convention of 1787.', items: [
         ['Weak answer (0 points)', '“People were unhappy with the government, so they wanted to make a new one.” This is too vague. Which people? Which government? Why? There is no specific evidence.'],
