@@ -72,6 +72,7 @@
   const fmtTime = s => { s = Math.max(0, Math.round(s)); const m = Math.floor(s / 60), r = s % 60; return m + ':' + String(r).padStart(2, '0'); };
   const fmtDur = s => { if (s < 60) return Math.round(s) + 's'; const m = Math.round(s / 60); return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm'; };
   const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+  const STAR = '<svg class="wu-star" viewBox="0 0 24 24" width="15" height="15" aria-label="From class warm-ups"><path d="M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.2L12 17.1 6.4 20l1.1-6.2L2.9 9.4l6.3-.9z" fill="currentColor"/></svg>';
   const ICON = {
     check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     arrowR: '<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
@@ -695,10 +696,11 @@
   }
 
   /* ════════════════════════ SAQ ════════════════════════ */
+  let SAQF = 'all';
   function viewSaqList() {
     const groups = {};
     groups['From class warm-ups'] = [];
-    SAQ.forEach(s => { const k = s.wu ? 'From class warm-ups' : s.kind || 'Other'; (groups[k] = groups[k] || []).push(s); });
+    SAQ.filter(s => SAQF === 'all' || (SAQF === 'wu' ? s.wu : !s.wu)).forEach(s => { const k = s.wu ? 'From class warm-ups' : s.kind || 'Other'; (groups[k] = groups[k] || []).push(s); });
     paint(`
       <div class="page-head"><div><div class="eyebrow">Practice</div><h1>SAQ Practice</h1><p>Short-answer questions in the AP format: three parts (A, B, C), each worth one point. Write your answer, then reveal the scoring guide and score yourself honestly.</p></div></div>
       <div class="card pad" style="margin-bottom:20px"><div class="grid g3">
@@ -706,10 +708,12 @@
         <div><div class="eyebrow" style="margin-bottom:6px">2 · Give evidence</div><p style="font-size:14px" class="muted">Use a detail from the source, a specific fact, or a development of the period you can explain. “People were upset” earns nothing; “colonists resented being taxed without representation” does.</p></div>
         <div><div class="eyebrow" style="margin-bottom:6px">3 · Explain the link</div><p style="font-size:14px" class="muted">Use “because,” “which led to,” or “this shows.” Connect your evidence back to the prompt.</p></div>
       </div></div>
-      ${Object.entries(groups).map(([k, arr]) => `<h3 style="margin:24px 0 10px">${esc(k)} <span class="faint" style="font-weight:400">· ${arr.length}</span></h3><div class="saq-list">${arr.map(s => {
+      <div class="seg" style="margin-bottom:4px">${[['all', 'All SAQs'], ['wu', '★ From warm-ups'], ['other', 'Other']].map(([k, n]) => `<button class="${SAQF === k ? 'on' : ''}" data-act="saqf" data-f="${k}">${n}</button>`).join('')}</div>
+      ${Object.entries(groups).filter(([, arr]) => arr.length).map(([k, arr]) => `<h3 style="margin:24px 0 10px">${esc(k)} <span class="faint" style="font-weight:400">· ${arr.length}</span></h3><div class="saq-list">${arr.map(s => {
       const r = S.saq[s.id]; const sc = r && r.score ? Object.values(r.score).filter(Boolean).length : null;
-      return `<a class="card saq-row" href="#/saq/${s.id}"><div style="min-width:0"><b style="font-size:15px;font-weight:550">${esc(s.title)}</b><div class="row wrap" style="margin-top:6px;gap:6px">${diffChip(s.d)}${s.wu ? `<span class="chip">${esc(s.wu)}</span>` : ''}${(s.l || []).map(lessonChip).join('')}</div></div><div>${sc != null ? `<span class="chip ${sc === 3 ? 'good' : sc >= 2 ? 'accent' : 'bad'}">${sc}/3</span>` : r ? '<span class="chip">Draft</span>' : `<span class="btn sm">Start</span>`}</div></a>`;
+      return `<a class="card saq-row" href="#/saq/${s.id}"><div style="min-width:0"><b style="font-size:15px;font-weight:550">${s.wu ? STAR + ' ' : ''}${esc(s.title)}</b><div class="row wrap" style="margin-top:6px;gap:6px">${diffChip(s.d)}${s.wu ? `<span class="chip">${esc(s.wu)}</span>` : ''}${(s.l || []).map(lessonChip).join('')}</div></div><div>${sc != null ? `<span class="chip ${sc === 3 ? 'good' : sc >= 2 ? 'accent' : 'bad'}">${sc}/3</span>` : r ? '<span class="chip">Draft</span>' : `<span class="btn sm">Start</span>`}</div></a>`;
     }).join('')}</div>`).join('')}`);
+    H.saqf = el => { SAQF = el.dataset.f; viewSaqList(); };
   }
   function viewSaq(id) {
     teardown();
@@ -782,7 +786,7 @@
     return `<div style="margin-top:16px"><a class="btn ghost sm" href="${ctx === 'saq' ? '#/saq' : 'javascript:void 0'}" ${ctx !== 'saq' ? 'hidden' : ''}>${ICON.arrowL} All SAQs</a></div>
       <div class="card qcard" style="margin-top:12px">
         <div class="q-meta">${diffChip(s.d)}<span class="chip">${esc(s.kind || 'SAQ')}</span>${s.wu ? `<span class="chip accent">${esc(s.wu)}</span>` : ''}${(s.l || []).map(lessonChip).join('')}</div>
-        <h2 style="font-family:var(--serif);font-weight:500;font-size:24px;margin-bottom:14px">${esc(s.title)}</h2>
+        <h2 style="font-family:var(--serif);font-weight:500;font-size:24px;margin-bottom:14px">${s.wu ? STAR + ' ' : ''}${esc(s.title)}</h2>
         ${s.intro ? `<p style="margin-bottom:14px;color:var(--ink-2)">${s.intro}</p>` : ''}
         ${stims.map(st => `<div class="stim">${st.label ? `<div class="eyebrow" style="margin-bottom:8px">${esc(st.label)}</div>` : ''}${st.img ? `<img src="${st.img}" alt="">` : ''}${st.table || ''}${st.text ? `<div class="st">${st.text}</div>` : ''}${st.src ? `<div class="ss">${st.src}</div>` : ''}</div>`).join('')}
         ${s.prompt ? `<p style="font-weight:550;margin:6px 0 4px">${s.prompt}</p>` : ''}

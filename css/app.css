@@ -580,3 +580,6 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.55; }
   .chain-step { flex-basis: 100%; margin-right: 0; margin-bottom: 22px; }
   .chain-step:not(:last-child)::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -21px; transform: none; }
 }
+
+.wu-star { display: inline-block !important; color: #e0a100; vertical-align: -2px; margin-right: 2px; flex: none; }
+h2 .wu-star { width: 20px; height: 20px; vertical-align: -1px; }
